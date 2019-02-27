@@ -13,7 +13,7 @@
 
 
   <ItemGroup>
-    <Folder Include="ViewModels\" />
+    <ProjectReference Include="..\Exchange.Core\Exchange.Core.csproj" />
   </ItemGroup>
 
 </Project>
