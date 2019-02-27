@@ -1,10 +1,13 @@
-﻿using System.Threading.Tasks;
-using Exchange.Core.DTO;
+﻿using Exchange.Core.DTOs;
+using Exchange.Core.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Exchange.Core.Services
 {
     public interface INbpApiService
     {
-        Task<RateDTO> GetExchangeRate(string iso4217code);
+        Task<RateDto> GetExchangeRateAsync(string iso4217Code);
+        Task<IEnumerable<Currency>> GetAllCurrenciesAsync();
     }
 }

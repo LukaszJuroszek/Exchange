@@ -2,8 +2,25 @@
 @{
     ViewData["Title"] = "Home Page";
 }
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div>
+    <form asp-controller="Home" asp-action="Index" method="post">
+        <select asp-for="FromCurrency"
+                asp-items="@(new SelectList(Model.Currencies,"Iso4217CurrencyCode","Iso4217CurrencyCode"))">
+            <option>Please select one</option>
+        </select>
+        Amount: <input asp-for="Amount" /><br />
+        <select asp-for="ToCurrency"
+                asp-items="@(new SelectList(Model.Currencies,"Iso4217CurrencyCode","Iso4217CurrencyCode"))">
+            <option>Please select one</option>
+        </select>
+        <button type="submit">Calculate</button>
+    </form>
+    @if (Model.ExchangeValue != decimal.Zero)
+    {
+        @Model.ExchangeValue
+    }
+    else
+    {
+        @Html.Raw("Please select first currencies and amount")
+    }
 </div>

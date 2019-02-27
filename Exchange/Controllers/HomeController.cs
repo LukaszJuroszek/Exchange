@@ -1,41 +1,45 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+﻿using Exchange.Core.Services;
 using Exchange.Models;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Exchange.ViewModels;
-using System.Xml.Serialization;
-using Exchange.Core.DTO;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Exchange.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly string _baseApiUri = "http://api.nbp.pl/api";
-        private readonly IHttpClientFactory _httpClientFactory;
 
-        public HomeController(IHttpClientFactory httpClientFactory)
+        private readonly IExchangeService _exchangeService;
+        private readonly INbpApiService _nbpApiService;
+
+        public HomeController(IExchangeService exchangeService, INbpApiService nbpApiService)
         {
-            _httpClientFactory = httpClientFactory;
+            _exchangeService = exchangeService;
+            _nbpApiService = nbpApiService;
         }
 
         public async Task<IActionResult> Index()
         {
-            var client = _httpClientFactory.CreateClient();
-            var result = await client.GetAsync($@"{_baseApiUri}/exchangerates/rates/a/chf/");
-            result.EnsureSuccessStatusCode();
-            var rate = await result.Content.ReadAsAsync<RatesDTO>();
-            var test = await result.Content.ReadAsStringAsync();
-            return View();
+            var currentCurrencies = await _nbpApiService.GetAllCurrenciesAsync();
+
+            var vm = new IndexViewModel
+            {
+                Currencies = currentCurrencies,
+            };
+
+            return View(vm);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Index(IndexViewModel model)
+        public async Task<IActionResult> Index(IndexViewModel vm)
         {
-            
-            return View();
+            var exchange = await _exchangeService.ExchangeAsync(vm.FromCurrency, vm.ToCurrency, vm.Amount);
+            var currentCurrencies = await _nbpApiService.GetAllCurrenciesAsync();
+
+            vm.ExchangeValue = exchange;
+            vm.Currencies = currentCurrencies;
+            return View(vm);
         }
 
         public IActionResult Privacy()
