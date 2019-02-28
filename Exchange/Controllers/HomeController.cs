@@ -41,9 +41,10 @@ namespace Exchange.Controllers
                 return View(vm);
 
             var exchange = await _exchangeService.ExchangeAsync(vm.FromCurrency, vm.ToCurrency, vm.Amount);
+            var dateOfAdvantageousExchange = await _exchangeService.GetDateOfAdvantageousExchangeAsync(vm.FromCurrency, vm.ToCurrency);
 
             vm.ExchangeValue = exchange;
-
+            vm.DateOfAdvantageousExchange = dateOfAdvantageousExchange;
             return View(vm);
         }
 

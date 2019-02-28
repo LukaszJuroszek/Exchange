@@ -1,4 +1,5 @@
 ﻿using Exchange.Core.Models;
+using System;
 using System.Collections.Generic;
 
 namespace Exchange.ViewModels
@@ -10,5 +11,6 @@ namespace Exchange.ViewModels
         public string ToCurrency { get; set; }
         public decimal Amount { get; set; }
         public decimal ExchangeValue { get; set; }
+        public DateTime? DateOfAdvantageousExchange { get; set; }
     }
 }

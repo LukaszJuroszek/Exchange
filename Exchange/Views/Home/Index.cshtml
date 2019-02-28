@@ -27,7 +27,7 @@
         <div class="row justify-content-center text-center">
             @if (Model.ExchangeValue != decimal.Zero)
             {
-                <div class="col col-md-5 display-3">
+                <div class="col col-md-5 display-1">
                     @decimal.Round(Model.ExchangeValue, 5) @Model.ToCurrency
                 </div>
             }
@@ -35,6 +35,21 @@
             {
                 <div class="col col-md-4 alert-danger">
                     @Html.Raw("Pleas select first currencies and amount")
+                </div>
+            }
+        </div>
+        <div class="row justify-content-center text-center">
+            @if (Model.DateOfAdvantageousExchange.HasValue)
+            {
+                <div class="col col-md-12 display-3">
+                    @if (Model.DateOfAdvantageousExchange.Value.Date == DateTime.Now.Date)
+                    {
+                        @Html.Raw("Today is best day to exchange!")
+                    }
+                    else
+                    {
+                        @Html.Raw($"Best day to exchange {Model.ToCurrency} was {Model.DateOfAdvantageousExchange.Value.ToShortDateString()}")
+                    }
                 </div>
             }
         </div>

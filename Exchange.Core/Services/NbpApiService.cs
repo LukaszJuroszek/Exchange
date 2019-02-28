@@ -9,7 +9,7 @@ namespace Exchange.Core.Services
 {
     public class NbpApiService : INbpApiService
     {
-        private readonly string _baseApiUri = "http://api.nbp.pl/api";
+        private readonly string _baseApiUri = "http://api.nbp.pl/api/exchangerates";
         private readonly IHttpClientFactory _httpClientFactory;
 
         public NbpApiService(IHttpClientFactory httpClientFactory)
@@ -17,27 +17,48 @@ namespace Exchange.Core.Services
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<RateDto> GetExchangeRateAsync(string iso4217Code)
+        public async Task<Currency> GetExchangeRateAsync(string iso4217Code)
         {
             var client = _httpClientFactory.CreateClient();
-            var result = await client.GetAsync($@"{_baseApiUri}/exchangerates/rates/a/{iso4217Code.ToLower()}/");
+            var result = await client.GetAsync($@"{_baseApiUri}/rates/a/{iso4217Code.ToLower()}/");
 
             //handle error
             result.EnsureSuccessStatusCode();
 
             var rates = await result.Content.ReadAsAsync<RatesDto>();
 
-            return rates.Rates.FirstOrDefault();
+            // handle null
+            var rate = rates.Rates.FirstOrDefault();
+
+            return new Currency { Iso4217CurrencyCode = rate.Code, Mid = rate.Mid, Name = rate.Currency };
         }
 
         public async Task<IEnumerable<Currency>> GetAllCurrenciesAsync()
         {
             var client = _httpClientFactory.CreateClient();
-            var result = await client.GetAsync($@"{_baseApiUri}/exchangerates/tables/a/");
-            var test = await result.Content.ReadAsStringAsync();
+            var result = await client.GetAsync($@"{_baseApiUri}/tables/a/");
+
             var allRates = await result.Content.ReadAsAsync<List<ExchangeRatesTableDto>>();
 
-            return allRates.First().Rates.Select(x => new Currency { Iso4217CurrencyCode = x.Code });
+            return allRates.First().Rates.Select(x => new Currency { Iso4217CurrencyCode = x.Code, Mid = x.Mid, Name = x.Currency });
+        }
+
+        public async Task<IEnumerable<Currency>> GetCurrencyHistoryAsync(Currency currency, int lastDays = 30)
+        {
+            var client = _httpClientFactory.CreateClient();
+            var result = await client.GetAsync($@"{_baseApiUri}/rates/a/{currency.Iso4217CurrencyCode.ToLower()}/last/{lastDays}");
+
+            var exchangeRatesTableDto = await result.Content.ReadAsAsync<ExchangeRatesTableDto>();
+
+            return exchangeRatesTableDto.Rates
+                .Select(x =>
+                    new Currency
+                    {
+                        Iso4217CurrencyCode = exchangeRatesTableDto.Code,
+                        Mid = x.Mid,
+                        Name = exchangeRatesTableDto.Currency,
+                        EffectiveDate = x.EffectiveDate
+                    });
         }
     }
 }
