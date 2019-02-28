@@ -12,7 +12,8 @@ namespace Exchange.Core.Services
     {
         private readonly string _baseApiUri = "http://api.nbp.pl/api/exchangerates";
         private readonly IHttpClientFactory _httpClientFactory;
-        //for base currency
+
+        //for pln currency only
         private readonly string _plnIso4217CurrencyCode = "PLN";
         private readonly string _plnName = "polski złoty";
         private readonly decimal _plnMid = 1.0m;
@@ -65,27 +66,9 @@ namespace Exchange.Core.Services
         public async Task<IEnumerable<Currency>> GetCurrencyHistoryAsync(Currency currency, int lastDays = 30)
         {
             //Add missing pln currency that not present in api
-
             if (currency.Iso4217CurrencyCode == _plnIso4217CurrencyCode)
             {
-                var plnCurrencies = new List<Currency>();
-                var startDate = DateTime.Now.Date;
-                //check if current day is not weekend
-                startDate = CheckIfDateIsInWeekendDay(startDate);
-                for (int i = 0; i < lastDays; i++)
-                {
-                    plnCurrencies.Add(new Currency
-                    {
-                        Iso4217CurrencyCode = _plnIso4217CurrencyCode,
-                        Mid = _plnMid,
-                        Name = _plnName,
-                        EffectiveDate = startDate
-                    });
-                    startDate = startDate.AddDays(-1);
-
-                    //check if current day is not weekend
-                    startDate = CheckIfDateIsInWeekendDay(startDate);
-                }
+                List<Currency> plnCurrencies = GenerateFakeHistoryPlnTable(lastDays);
 
                 return plnCurrencies.AsEnumerable();
             }
@@ -96,14 +79,37 @@ namespace Exchange.Core.Services
             var exchangeRatesTableDto = await result.Content.ReadAsAsync<ExchangeRatesTableDto>();
 
             return exchangeRatesTableDto.Rates
-                .Select(x =>
-                    new Currency
-                    {
-                        Iso4217CurrencyCode = exchangeRatesTableDto.Code,
-                        Mid = x.Mid,
-                        Name = exchangeRatesTableDto.Currency,
-                        EffectiveDate = x.EffectiveDate
-                    });
+                .Select(x => new Currency
+                {
+                    Iso4217CurrencyCode = exchangeRatesTableDto.Code,
+                    Mid = x.Mid,
+                    Name = exchangeRatesTableDto.Currency,
+                    EffectiveDate = x.EffectiveDate
+                });
+        }
+
+        private List<Currency> GenerateFakeHistoryPlnTable(int lastDays)
+        {
+            var plnCurrencies = new List<Currency>();
+            var startDate = DateTime.Now.Date;
+            //check if current day is not weekend
+            startDate = CheckIfDateIsInWeekendDay(startDate);
+            for (int i = 0; i < lastDays; i++)
+            {
+                plnCurrencies.Add(new Currency
+                {
+                    Iso4217CurrencyCode = _plnIso4217CurrencyCode,
+                    Mid = _plnMid,
+                    Name = _plnName,
+                    EffectiveDate = startDate
+                });
+                startDate = startDate.AddDays(-1);
+
+                //check if current day is not weekend
+                startDate = CheckIfDateIsInWeekendDay(startDate);
+            }
+
+            return plnCurrencies;
         }
 
         private DateTime CheckIfDateIsInWeekendDay(DateTime startDate)

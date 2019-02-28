@@ -22,11 +22,7 @@ namespace Exchange.Controllers
         public async Task<IActionResult> Index()
         {
             var currentCurrencies = await _nbpApiService.GetAllCurrenciesAsync();
-            var vm = new IndexViewModel
-            {
-                //Add PLN rate (not in Table A)
-                Currencies = currentCurrencies,
-            };
+            var vm = new IndexViewModel { Currencies = currentCurrencies };
 
             return View(vm);
         }

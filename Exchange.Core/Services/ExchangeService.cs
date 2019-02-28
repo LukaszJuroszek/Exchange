@@ -64,8 +64,8 @@ namespace Exchange.Core.Services
                 ToCurrency = midToCurrencyHistory.FirstOrDefault(c => c.EffectiveDate == fromCurrency.EffectiveDate)
             });
 
-            if (currenciesParisByEffectiveDate.Any(x => x.ToCurrency == null))
-                throw new Exception("history pair not valid");
+            if (currenciesParisByEffectiveDate.Any(x => x.ToCurrency is null))
+                throw new Exception("History pair not valid");
 
             var maxExchangeRatioDate = currenciesParisByEffectiveDate
                 .FirstOrDefault(x => (x.FromCurrency.Mid / x.ToCurrency.Mid) == currenciesParisByEffectiveDate.Max(m => m.FromCurrency.Mid / m.ToCurrency.Mid)).EffectiveDate;
