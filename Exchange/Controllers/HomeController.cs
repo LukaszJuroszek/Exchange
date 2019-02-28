@@ -34,17 +34,20 @@ namespace Exchange.Controllers
         [HttpPost]
         public async Task<IActionResult> Index(IndexViewModel vm)
         {
-            var currentCurrencies = await _nbpApiService.GetAllCurrenciesAsync();
-            vm.Currencies = currentCurrencies;
-
             if (string.IsNullOrEmpty(vm.FromCurrency) || string.IsNullOrEmpty(vm.ToCurrency))
                 return View(vm);
 
+            var currentCurrencies = await _nbpApiService.GetAllCurrenciesAsync();
             var exchange = await _exchangeService.ExchangeAsync(vm.FromCurrency, vm.ToCurrency, vm.Amount);
             var dateOfAdvantageousExchange = await _exchangeService.GetDateOfAdvantageousExchangeAsync(vm.FromCurrency, vm.ToCurrency);
 
             vm.ExchangeValue = exchange;
-            vm.DateOfAdvantageousExchange = dateOfAdvantageousExchange;
+
+            if (vm.FromCurrency != vm.ToCurrency)
+                vm.DateOfAdvantageousExchange = dateOfAdvantageousExchange;
+
+            vm.Currencies = currentCurrencies;
+
             return View(vm);
         }
 

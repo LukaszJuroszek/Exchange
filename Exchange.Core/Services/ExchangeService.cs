@@ -14,8 +14,11 @@ namespace Exchange.Core.Services
             _nbpApiService = nbpApiService;
         }
 
-        public async Task<decimal> ExchangeAsync(Currency from, Currency to, decimal amount)
+        public async Task<decimal> ExchangeAsync(string fromIso4217CurrencyCode, string toIso4217CurrencyCode, decimal amount)
         {
+            var from = await GetCurrencyFromCodeAsync(fromIso4217CurrencyCode);
+            var to = await GetCurrencyFromCodeAsync(toIso4217CurrencyCode);
+
             if (amount <= decimal.Zero)
                 return 0.0m;
 
@@ -23,16 +26,7 @@ namespace Exchange.Core.Services
                 return amount;
 
             var rate = await CurrentExchangeRateAsync(from, to);
-
             return amount * rate;
-        }
-
-        public async Task<decimal> ExchangeAsync(string fromIso4217CurrencyCode, string toIso4217CurrencyCode, decimal amount)
-        {
-            var from = await GetCurrencyFromCodeAsync(fromIso4217CurrencyCode);
-            var to = await GetCurrencyFromCodeAsync(toIso4217CurrencyCode);
-
-            return await ExchangeAsync(from, to, amount);
         }
 
         public async Task<decimal> GetMidFromCurrencyAsync(Currency currency)
@@ -55,11 +49,13 @@ namespace Exchange.Core.Services
             return result.SingleOrDefault(x => String.Equals(x.Iso4217CurrencyCode, iso4217CurrencyCode, StringComparison.CurrentCultureIgnoreCase));
         }
 
-        public async Task<DateTime> GetDateOfAdvantageousExchangeAsync(Currency from, Currency to, int inLastDay)
+        public async Task<DateTime> GetDateOfAdvantageousExchangeAsync(string fromIso4217CurrencyCode, string toIso4217CurrencyCode, int inLastDay)
         {
+            var from = await GetCurrencyFromCodeAsync(fromIso4217CurrencyCode);
+            var to = await GetCurrencyFromCodeAsync(toIso4217CurrencyCode);
+
             var midFromCurrencyHistory = await _nbpApiService.GetCurrencyHistoryAsync(from, inLastDay);
             var midToCurrencyHistory = await _nbpApiService.GetCurrencyHistoryAsync(to, inLastDay);
-
 
             var currenciesParisByEffectiveDate = midFromCurrencyHistory.Select(fromCurrency => new
             {
@@ -68,17 +64,13 @@ namespace Exchange.Core.Services
                 ToCurrency = midToCurrencyHistory.FirstOrDefault(c => c.EffectiveDate == fromCurrency.EffectiveDate)
             });
 
+            if (currenciesParisByEffectiveDate.Any(x => x.ToCurrency == null))
+                throw new Exception("history pair not valid");
+
             var maxExchangeRatioDate = currenciesParisByEffectiveDate
-                    .FirstOrDefault(x => (x.FromCurrency.Mid / x.ToCurrency.Mid) == currenciesParisByEffectiveDate.Max(m => m.FromCurrency.Mid / m.ToCurrency.Mid)).EffectiveDate;
+                .FirstOrDefault(x => (x.FromCurrency.Mid / x.ToCurrency.Mid) == currenciesParisByEffectiveDate.Max(m => m.FromCurrency.Mid / m.ToCurrency.Mid)).EffectiveDate;
 
             return maxExchangeRatioDate;
-        }
-
-        public async Task<DateTime> GetDateOfAdvantageousExchangeAsync(string fromIso4217CurrencyCode, string toIso4217CurrencyCode, int inLastDay)
-        {
-            var from = await GetCurrencyFromCodeAsync(fromIso4217CurrencyCode);
-            var to = await GetCurrencyFromCodeAsync(toIso4217CurrencyCode);
-            return await GetDateOfAdvantageousExchangeAsync(from, to, inLastDay);
         }
     }
 }
